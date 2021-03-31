@@ -20,8 +20,34 @@ package tr.com.srdc.cda2fhir.transform;
  * #L%
  */
 
-import ca.uhn.fhir.model.dstu2.valueset.*;
+import java.io.Serializable;
 
+import org.hl7.fhir.r4.model.Address.AddressType;
+import org.hl7.fhir.r4.model.Address.AddressUse;
+import org.hl7.fhir.r4.model.AllergyIntolerance.AllergyIntoleranceCategory;
+import org.hl7.fhir.r4.model.AllergyIntolerance.AllergyIntoleranceCriticality;
+import org.hl7.fhir.r4.model.AllergyIntolerance.AllergyIntoleranceSeverity;
+import org.hl7.fhir.r4.model.AllergyIntolerance.AllergyIntoleranceType;
+import org.hl7.fhir.r4.model.CodeableConcept;
+import org.hl7.fhir.r4.model.Coding;
+import org.hl7.fhir.r4.model.ContactPoint.ContactPointSystem;
+import org.hl7.fhir.r4.model.ContactPoint.ContactPointUse;
+import org.hl7.fhir.r4.model.DiagnosticReport.DiagnosticReportStatus;
+import org.hl7.fhir.r4.model.Encounter.EncounterStatus;
+import org.hl7.fhir.r4.model.Enumerations.AdministrativeGender;
+import org.hl7.fhir.r4.model.FamilyMemberHistory.FamilyHistoryStatus;
+import org.hl7.fhir.r4.model.Group.GroupType;
+import org.hl7.fhir.r4.model.HumanName.NameUse;
+import org.hl7.fhir.r4.model.Immunization.ImmunizationStatus;
+import org.hl7.fhir.r4.model.codesystems.MedicationdispenseStatus;
+import org.hl7.fhir.r4.model.MedicationRequest.MedicationRequestStatus;
+import org.hl7.fhir.r4.model.MedicationStatement.MedicationStatementStatus;
+import org.hl7.fhir.r4.model.Observation.ObservationStatus;
+import org.hl7.fhir.r4.model.Procedure.ProcedureStatus;
+import org.hl7.fhir.r4.model.Timing.UnitsOfTime;
+import org.hl7.fhir.r4.model.codesystems.V3ActCode;
+import org.hl7.fhir.r4.model.codesystems.V3MaritalStatus;
+import org.hl7.fhir.r4.model.codesystems.V3NullFlavor;
 import org.openhealthtools.mdht.uml.hl7.datatypes.CD;
 import org.openhealthtools.mdht.uml.hl7.vocab.EntityClassRoot;
 import org.openhealthtools.mdht.uml.hl7.vocab.EntityNameUse;
@@ -29,212 +55,350 @@ import org.openhealthtools.mdht.uml.hl7.vocab.NullFlavor;
 import org.openhealthtools.mdht.uml.hl7.vocab.PostalAddressUse;
 import org.openhealthtools.mdht.uml.hl7.vocab.TelecommunicationAddressUse;
 
-import ca.uhn.fhir.model.dstu2.composite.CodeableConceptDt;
-import ca.uhn.fhir.model.dstu2.composite.CodingDt;
+import tr.com.srdc.cda2fhir.conf.Config;
 
-import java.io.Serializable;
 
 public class ValueSetsTransformerImpl implements IValueSetsTransformer, Serializable {
 
-	public AdministrativeGenderEnum tAdministrativeGenderCode2AdministrativeGenderEnum(String cdaAdministrativeGenderCode) {
-		switch (cdaAdministrativeGenderCode.toLowerCase()) {
-			case "f":
-				return AdministrativeGenderEnum.FEMALE;
-			case "m":
-				return AdministrativeGenderEnum.MALE;
-			case "un":
-				return AdministrativeGenderEnum.UNKNOWN;
-			default:
-				return AdministrativeGenderEnum.UNKNOWN;
-		}
-	}
+	/**
+	 *
+	 */
+	private static final long serialVersionUID = 1L;
+	private static final String UMLS_ROOT = "http://www.nlm.nih.gov/research/umls/";
+	private static final org.slf4j.Logger LOGGER = org.slf4j.LoggerFactory.getLogger(ValueSetsTransformerImpl.class);
 
-	public String tAgeObservationUnit2AgeUnit(String cdaAgeObservationUnit) {
-		if(cdaAgeObservationUnit == null || cdaAgeObservationUnit.isEmpty())
-			return null;
-		
-		switch(cdaAgeObservationUnit.toLowerCase()) {
-			case "a":
-				return "Year";
-			case "mo":
-				return "Month";
-			case "wk":
-				return "Week";
-			case "d":
-				return "Day";
-			case "h":
-				return "Hour";
-			case "min":
-				return "Minute";
-			default:
-				return null;
-		}
-	}
-
-	public AllergyIntoleranceCategoryEnum tAllergyCategoryCode2AllergyIntoleranceCategoryEnum(String cdaAllergyCategoryCode) {
-		if(cdaAllergyCategoryCode == null)
-			return null;
-		switch(cdaAllergyCategoryCode) {
-			case "416098002":
-			case "59037007":
-			case "419511003":
-				return AllergyIntoleranceCategoryEnum.MEDICATION;
-			case "414285001": 
-			case "235719002":
-			case "418471000":
-				return AllergyIntoleranceCategoryEnum.FOOD;
-			case "232347008":
-				return AllergyIntoleranceCategoryEnum.ENVIRONMENT;
-			case "420134006":
-			case "418038007":
-			case "419199007": 
-				return AllergyIntoleranceCategoryEnum.OTHER;
-			default:
-				return null;
-		}
-	}
-	
-	public AllergyIntoleranceCriticalityEnum tCriticalityObservationValue2AllergyIntoleranceCriticalityEnum(String cdaCriticalityObservationValue) {
-		if(cdaCriticalityObservationValue == null || cdaCriticalityObservationValue.isEmpty())
-			return null;
-		switch(cdaCriticalityObservationValue.toLowerCase()) {
-			case "critl": 
-				return AllergyIntoleranceCriticalityEnum.LOW_RISK;
-			case "crith": 
-				return AllergyIntoleranceCriticalityEnum.HIGH_RISK;
-			case "critu": 
-				return AllergyIntoleranceCriticalityEnum.UNABLE_TO_DETERMINE;
-			default: 
-				return null;
-		}
-	}
-	
-	public EncounterClassEnum tEncounterCode2EncounterClassEnum(String cdaEncounterCode) {
-		if(cdaEncounterCode == null)
-			return null;
-		switch(cdaEncounterCode.toLowerCase()) {
-			case "amb": 
-			case "ambulatory":
-				return EncounterClassEnum.AMBULATORY;
-			case "out": 
-			case "outpatient":
-					return EncounterClassEnum.OUTPATIENT;
-			case "in":
-			case "inp":
-			case "inpatient":
-					return EncounterClassEnum.INPATIENT;
-			case "day":
-			case "daytime":
-				return EncounterClassEnum.DAYTIME;
-			case "em":
-			case "eme":
-			case "emergency":
-				return EncounterClassEnum.EMERGENCY;
-			case "hom":
-			case "home":
-				return EncounterClassEnum.HOME;
-			case "vir":
-			case "virtual":
-				return EncounterClassEnum.VIRTUAL;
-			case "fie":
-			case "field":
-				return EncounterClassEnum.FIELD;
-			case "other":
-			case "oth":
-				return EncounterClassEnum.OTHER;
-			default:
-				return null;
-				
-		}
-	}
-	
-	public GroupTypeEnum tEntityClassRoot2GroupTypeEnum(EntityClassRoot cdaEntityClassRoot) {
-		switch(cdaEntityClassRoot) {
-			case PSN:
-				return GroupTypeEnum.PERSON;
-			case ANM:
-				return GroupTypeEnum.ANIMAL;
-			case DEV:
-				return GroupTypeEnum.DEVICE;
-			case MMAT:
-				return GroupTypeEnum.MEDICATION;
-			default:
-				return null;
-		}
-	}
-
-	public NameUseEnum tEntityNameUse2NameUseEnum(EntityNameUse cdaEntityNameUse) {
-		switch(cdaEntityNameUse) {
-			case C: return NameUseEnum.USUAL;
-			case P: return NameUseEnum.NICKNAME;
-			default: return NameUseEnum.USUAL;
-		}
-	}
-
-	public FamilyHistoryStatusEnum tFamilyHistoryOrganizerStatusCode2FamilyHistoryStatusEnum(String cdaFamilyHistoryOrganizerStatusCode) {
-		switch(cdaFamilyHistoryOrganizerStatusCode.toLowerCase()){
+	@Override
+	public MedicationRequestStatus tActStatus2MedicationRequestStatus(String medicationRequestStatusCode) {
+		switch (medicationRequestStatusCode) {
+		case "cancelled":
+			return MedicationRequestStatus.CANCELLED;
+		case "aborted":
+			return MedicationRequestStatus.CANCELLED;
+		case "nullified":
+			return MedicationRequestStatus.CANCELLED;
+		case "active":
+			return MedicationRequestStatus.ACTIVE;
+		case "held":
+			return MedicationRequestStatus.ONHOLD;
+		case "suspended":
+			return MedicationRequestStatus.ONHOLD;
 		case "completed":
-			return FamilyHistoryStatusEnum.COMPLETED;
-		case "error":
-			return FamilyHistoryStatusEnum.ENTERED_IN_ERROR;
+			return MedicationRequestStatus.COMPLETED;
+		default:
+			return MedicationRequestStatus.UNKNOWN;
+		}
+	}
+
+	@Override
+	public AdministrativeGender tAdministrativeGenderCode2AdministrativeGender(String cdaAdministrativeGenderCode) {
+		switch (cdaAdministrativeGenderCode.toLowerCase()) {
+		case "f":
+			return AdministrativeGender.FEMALE;
+		case "m":
+			return AdministrativeGender.MALE;
 		case "un":
-			return FamilyHistoryStatusEnum.HEALTH_UNKNOWN;
-		case "part":
-			return FamilyHistoryStatusEnum.PARTIAL;
+			return AdministrativeGender.UNKNOWN;
+		default:
+			return AdministrativeGender.UNKNOWN;
+		}
+	}
+
+	@Override
+	public CodeableConcept tAdministrativeGenderCode2FamilyMemberHistorySex(String cdaFamilyMemberHistorySexCode) {
+		switch (cdaFamilyMemberHistorySexCode.toLowerCase()) {
+		case "f":
+			return new CodeableConcept(new Coding("http://hl7.org/fhir/administrative-gender", "female", "Female"));
+		case "m":
+			return new CodeableConcept(new Coding("http://hl7.org/fhir/administrative-gender", "male", "Male"));
+		case "un":
+			return new CodeableConcept(new Coding("http://hl7.org/fhir/administrative-gender", "unknown", "Unknown"));
+		default:
+			return new CodeableConcept(new Coding("http://hl7.org/fhir/administrative-gender", "unknown", "Unknown"));
+		}
+		
+	}
+
+	@Override
+	public String tAgeObservationUnit2AgeUnit(String cdaAgeObservationUnit) {
+		if (cdaAgeObservationUnit == null || cdaAgeObservationUnit.isEmpty())
+			return null;
+
+		switch (cdaAgeObservationUnit.toLowerCase()) {
+		case "a":
+			return "Year";
+		case "mo":
+			return "Month";
+		case "wk":
+			return "Week";
+		case "d":
+			return "Day";
+		case "h":
+			return "Hour";
+		case "min":
+			return "Minute";
 		default:
 			return null;
 		}
 	}
 
-	public MaritalStatusCodesEnum tMaritalStatusCode2MaritalStatusCodesEnum(String cdaMaritalStatusCode) {
-		switch(cdaMaritalStatusCode.toUpperCase()) {
-			case "A": return MaritalStatusCodesEnum.A;
-			case "D": return MaritalStatusCodesEnum.D;
-			case "I": return MaritalStatusCodesEnum.I;
-			case "L": return MaritalStatusCodesEnum.L;
-			case "M": return MaritalStatusCodesEnum.M;
-			case "P": return MaritalStatusCodesEnum.P;
-			case "S": return MaritalStatusCodesEnum.S;
-			case "T": return MaritalStatusCodesEnum.T;
-			case "W": return MaritalStatusCodesEnum.W;
-			case "UN":
-			default:
-				return MaritalStatusCodesEnum.UNK;
+	@Override
+	public AllergyIntoleranceCategory tAllergyCategoryCode2AllergyIntoleranceCategory(String cdaAllergyCategoryCode) {
+		if (cdaAllergyCategoryCode == null)
+			return null;
+		switch (cdaAllergyCategoryCode) {
+		case "416098002":
+		case "59037007":
+		case "419511003":
+			return AllergyIntoleranceCategory.MEDICATION;
+		case "414285001":
+		case "235719002":
+		case "418471000":
+			return AllergyIntoleranceCategory.FOOD;
+		case "232347008":
+		case "420134006":
+		case "418038007":
+		case "419199007":
+			return AllergyIntoleranceCategory.ENVIRONMENT;
+		default:
+			LOGGER.error("Unmapped allergy category code: {}", cdaAllergyCategoryCode);
+			return null;
 		}
 	}
 
-	public CodingDt tNullFlavor2DataAbsentReasonCode(NullFlavor cdaNullFlavor) {
-		CodingDt DataAbsentReasonCode = new CodingDt();
+	@Override
+	public AllergyIntoleranceType tAllergyCategoryCode2AllergyIntoleranceType(String cdaAllergyCategoryCode) {
+		if (cdaAllergyCategoryCode == null)
+			return null;
+		switch (cdaAllergyCategoryCode) {
+		case "419199007":
+		case "416098002":
+		case "414285001":
+		case "232347008":
+			return AllergyIntoleranceType.ALLERGY;
+		case "59037007":
+		case "235719002":
+		case "420134006":
+		case "419511003":
+		case "418471000":
+		case "418038007":
+			return AllergyIntoleranceType.INTOLERANCE;
+		default:
+			LOGGER.error("Unmapped allergy type code: {}", cdaAllergyCategoryCode);
+			return null;
+		}
+	}
+
+	@Override
+	public AllergyIntoleranceCriticality tCriticalityObservationValue2AllergyIntoleranceCriticality(
+			String cdaCriticalityObservationValue) {
+		if (cdaCriticalityObservationValue == null || cdaCriticalityObservationValue.isEmpty())
+			return null;
+		switch (cdaCriticalityObservationValue.toLowerCase()) {
+		case "critl":
+			return AllergyIntoleranceCriticality.LOW;
+		case "crith":
+			return AllergyIntoleranceCriticality.HIGH;
+		case "critu":
+			return AllergyIntoleranceCriticality.UNABLETOASSESS;
+		default:
+			return null;
+		}
+	}
+
+	@Override
+	public Coding tEncounterCode2EncounterCode(String cdaEncounterCode) {
+		if (cdaEncounterCode == null)
+			return null;
+		switch (cdaEncounterCode.toLowerCase()) {
+		case "amb":
+		case "ambulatory":
+			// return EncounterClassEnum.AMBULATORY;
+			return toCoding(V3ActCode.AMB);
+		case "out":
+		case "outpatient":
+			// TODO: verify if this is correct
+			// return EncounterClassEnum.OUTPATIENT;
+			return toCoding(V3ActCode.AMB);
+		case "in":
+		case "inp":
+		case "inpatient":
+			// return EncounterClassEnum.INPATIENT;
+			return toCoding(V3ActCode.IMP);
+		case "day":
+		case "daytime":
+			// TODO: check if mapping is correct
+			// return EncounterClassEnum.DAYTIME;
+			return toCoding(V3ActCode.AMB);
+		case "em":
+		case "eme":
+		case "emergency":
+			// return EncounterClassEnum.EMERGENCY;
+			return toCoding(V3ActCode.EMER);
+		case "hom":
+		case "home":
+			// return EncounterClassEnum.HOME;
+			return toCoding(V3ActCode.HH);
+		case "vir":
+		case "virtual":
+			// return EncounterClassEnum.VIRTUAL;
+			return toCoding(V3ActCode.VR);
+		case "fie":
+		case "field":
+			// return EncounterClassEnum.FIELD;
+			return toCoding(V3ActCode.FLD);
+		case "other":
+		case "oth":
+			// TODO: find correct mapping
+			// return EncounterClassEnum.OTHER;
+			throw new IllegalArgumentException("Unmapped " + cdaEncounterCode.toLowerCase());
+		default:
+			return null;
+
+		}
+	}
+
+	private Coding toCoding(V3ActCode a) {
+		return new Coding().setSystem(a.getSystem()).setCode(a.toCode()).setDisplay(a.getDisplay());
+	}
+
+	@Override
+	public GroupType tEntityClassRoot2GroupType(EntityClassRoot cdaEntityClassRoot) {
+		switch (cdaEntityClassRoot) {
+		case PSN:
+			return GroupType.PERSON;
+		case ANM:
+			return GroupType.ANIMAL;
+		case DEV:
+			return GroupType.DEVICE;
+		case MMAT:
+			return GroupType.MEDICATION;
+		default:
+			return null;
+		}
+	}
+
+	@Override
+	public NameUse tEntityNameUse2NameUse(EntityNameUse cdaEntityNameUse) {
+		switch (cdaEntityNameUse) {
+		case C:
+			return NameUse.USUAL;
+		case P:
+			return NameUse.NICKNAME;
+		default:
+			return NameUse.USUAL;
+		}
+	}
+
+	@Override
+	public FamilyHistoryStatus tFamilyHistoryOrganizerStatusCode2FamilyHistoryStatus(
+			String cdaFamilyHistoryOrganizerStatusCode) {
+		switch (cdaFamilyHistoryOrganizerStatusCode.toLowerCase()) {
+		case "completed":
+			return FamilyHistoryStatus.COMPLETED;
+		case "error":
+			return FamilyHistoryStatus.ENTEREDINERROR;
+		case "un":
+			return FamilyHistoryStatus.HEALTHUNKNOWN;
+		case "part":
+			return FamilyHistoryStatus.PARTIAL;
+		default:
+			return null;
+		}
+	}
+
+	@Override
+	public Coding tMaritalStatusCode2MaritalStatusCode(String cdaMaritalStatusCode) {
+
+		switch (cdaMaritalStatusCode.toUpperCase()) {
+		case "A":
+			return toCoding(V3MaritalStatus.A);
+		case "D":
+			return toCoding(V3MaritalStatus.D);
+		case "I":
+			return toCoding(V3MaritalStatus.I);
+		case "L":
+			return toCoding(V3MaritalStatus.L);
+		case "M":
+			return toCoding(V3MaritalStatus.M);
+		case "P":
+			return toCoding(V3MaritalStatus.P);
+		case "S":
+			return toCoding(V3MaritalStatus.S);
+		case "T":
+			return toCoding(V3MaritalStatus.T);
+		case "W":
+			return toCoding(V3MaritalStatus.W);
+		case "UN":
+		default:
+			return toCoding(V3NullFlavor.UNK);
+		}
+	}
+
+	private Coding toCoding(V3NullFlavor a) {
+		return new Coding().setSystem(a.getSystem()).setCode(a.toCode()).setDisplay(a.getDisplay());
+	}
+
+	private Coding toCoding(V3MaritalStatus a) {
+		return new Coding().setSystem(a.getSystem()).setCode(a.toCode()).setDisplay(a.getDisplay());
+	}
+
+	@Override
+	public Coding tNullFlavor2DataAbsentReasonCode(NullFlavor cdaNullFlavor) {
+		Coding DataAbsentReasonCode = new Coding();
 		String code = null;
 		String display = null;
 
-		switch(cdaNullFlavor) {
-			case UNK:
-				code = "unknown"; display = "Unkown"; break;
-			case ASKU:
-				code = "asked"; display = "Asked"; break;
-			case MSK:
-				code = "masked"; display = "Masked"; break;
-			case NA:
-				code = "unsupported"; display= "Unsupported"; break;
-			case NASK:
-				code= "not-asked"; display = "Not Asked"; break;
-			case NAV:
-				code = "temp"; display = "Temp"; break;
-			case NI:
-				code = "error"; display = "Error"; break;
-			case NINF:
-				code = "NaN"; display = "Not a Number"; break;
-			case NP:
-				code = "unknown"; display = "Unkown"; break;
-			case OTH:
-				code = "error"; display = "Error"; break;
-			case PINF:
-				code = "NaN"; display = "Not a Number"; break;
-			case TRC:
-				code = "NaN"; display = "Not a Number"; break;
-			default:
-				break;
+		switch (cdaNullFlavor) {
+		case UNK:
+			code = "unknown";
+			display = "Unkown";
+			break;
+		case ASKU:
+			code = "asked";
+			display = "Asked";
+			break;
+		case MSK:
+			code = "masked";
+			display = "Masked";
+			break;
+		case NA:
+			code = "unsupported";
+			display = "Unsupported";
+			break;
+		case NASK:
+			code = "not-asked";
+			display = "Not Asked";
+			break;
+		case NAV:
+			code = "temp";
+			display = "Temp";
+			break;
+		case NI:
+			code = "error";
+			display = "Error";
+			break;
+		case NINF:
+			code = "NaN";
+			display = "Not a Number";
+			break;
+		case NP:
+			code = "unknown";
+			display = "Unkown";
+			break;
+		case OTH:
+			code = "error";
+			display = "Error";
+			break;
+		case PINF:
+			code = "NaN";
+			display = "Not a Number";
+			break;
+		case TRC:
+			code = "NaN";
+			display = "Not a Number";
+			break;
+		default:
+			break;
 		}
 
 		DataAbsentReasonCode.setSystem("http://hl7.org/fhir/data-absent-reason");
@@ -244,607 +408,823 @@ public class ValueSetsTransformerImpl implements IValueSetsTransformer, Serializ
 		return DataAbsentReasonCode;
 	}
 
-	public CodeableConceptDt tObservationInterpretationCode2ObservationInterpretationCode(CD cdaObservationInterpretationCode) {
-		if(cdaObservationInterpretationCode == null)
+	@Override
+	public CodeableConcept tObservationInterpretationCode2ObservationInterpretationCode(
+			CD cdaObservationInterpretationCode) {
+		if (cdaObservationInterpretationCode == null)
 			return null;
-		CodingDt obsIntCode = new CodingDt();
-		obsIntCode.setSystem("http://hl7.org/fhir/v2/0078");
-		
+		Coding obsIntCode = new Coding();
+		obsIntCode.setSystem("http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation");
+
 		String code = null, display = null;
-		
+
 		// init code and display with the CDA incomings
-		if(cdaObservationInterpretationCode.getCode() != null) 
+		if (cdaObservationInterpretationCode.getCode() != null)
 			code = cdaObservationInterpretationCode.getCode();
-		if(cdaObservationInterpretationCode.getDisplayName() != null)
+		if (cdaObservationInterpretationCode.getDisplayName() != null)
 			display = cdaObservationInterpretationCode.getDisplayName();
-		
+
 		// if a different code is found, change it
-		if(cdaObservationInterpretationCode.getCode() != null) {
-			switch(cdaObservationInterpretationCode.getCode().toUpperCase()) {
+		if (cdaObservationInterpretationCode.getCode() != null) {
+			switch (cdaObservationInterpretationCode.getCode().toUpperCase()) {
 			case "AC":
-				code = "IE"; display = "Insufficient evidence"; break;
+				code = "IE";
+				display = "Insufficient evidence";
+				break;
 			case "EX":
-				code = "IND"; display = "Indeterminate"; break;
+				code = "IND";
+				display = "Indeterminate";
+				break;
 			case "HX":
-				code = "H"; display = "High"; break;
+				code = "H";
+				display = "High";
+				break;
 			case "LX":
-				code = "L"; display = "Low"; break;
+				code = "L";
+				display = "Low";
+				break;
 			case "QCF":
-				code = "IND"; display = "Indeterminate"; break;
+				code = "IND";
+				display = "Indeterminate";
+				break;
 			case "TOX":
-				code = "IND"; display = "Indeterminate"; break;
+				code = "IND";
+				display = "Indeterminate";
+				break;
 			case "CAR":
-				code = "DET"; display = "Detected"; break;
+				code = "DET";
+				display = "Detected";
+				break;
 			case "H>":
-				code = "HU"; display = "Very high"; break;
+				code = "HU";
+				display = "Very high";
+				break;
 			case "L<":
-				code = "LU"; display = "Very low"; break;
+				code = "LU";
+				display = "Very low";
+				break;
 			default:
 				break;
+			}
 		}
-	}
 		obsIntCode.setCode(code);
-		obsIntCode.setDisplay(display);
-		return new CodeableConceptDt().addCoding(obsIntCode);
+		
+		if (Config.getIsTransactionBundle() == false) {
+			obsIntCode.setDisplay(display);
+		}
+		
+		return new CodeableConcept().addCoding(obsIntCode);
 	}
-	
-	public ObservationStatusEnum tObservationStatusCode2ObservationStatusEnum(String cdaObservationStatusCode) {
-		switch(cdaObservationStatusCode.toLowerCase()) {
-		// TODO: https://www.hl7.org/fhir/valueset-observation-status.html and pdf page 476
+
+	@Override
+	public ObservationStatus tObservationStatusCode2ObservationStatus(String cdaObservationStatusCode) {
+		switch (cdaObservationStatusCode.toLowerCase()) {
+		// TODO: https://www.hl7.org/fhir/valueset-observation-status.html and pdf page
+		// 476
 		// Check the following mapping
-			case "new":	
-			case "held":
-				return ObservationStatusEnum.REGISTERED;
-			case "normal":
-			case "active":
-				return ObservationStatusEnum.PRELIMINARY;
-			case "completed":
-				return ObservationStatusEnum.FINAL;
-			case "error":
-				return ObservationStatusEnum.ENTERED_IN_ERROR;
-			case "cancelled":
-			case "aborted":
-			case "nullified":
-			case "suspended":
-				return ObservationStatusEnum.CANCELLED;
-			case "obsolete":
-			default:
-				return ObservationStatusEnum.UNKNOWN_STATUS;
+		case "new":
+		case "held":
+			return ObservationStatus.REGISTERED;
+		case "normal":
+		case "active":
+			return ObservationStatus.PRELIMINARY;
+		case "completed":
+			return ObservationStatus.FINAL;
+		case "error":
+			return ObservationStatus.ENTEREDINERROR;
+		case "cancelled":
+		case "aborted":
+		case "nullified":
+		case "suspended":
+			return ObservationStatus.CANCELLED;
+		case "obsolete":
+		default:
+			return ObservationStatus.UNKNOWN;
 		}
 	}
 
+	@Override
 	public String tOid2Url(String codeSystem) {
 		String system = null;
 		switch (codeSystem) {
-	        case "2.16.840.1.113883.6.96":
-	            system = "http://snomed.info/sct";
-	            break;
-	        case "2.16.840.1.113883.6.88":
-	            system = "http://www.nlm.nih.gov/research/umls/rxnorm";
-	            break;
-	        case "2.16.840.1.113883.6.1":
-	            system = "http://loinc.org";
-	            break;
-	        case "2.16.840.1.113883.6.8":
-	            system = "http://unitsofmeasure.org";
-	            break;
-	        case "2.16.840.1.113883.3.26.1.2":
-	            system = "http://ncimeta.nci.nih.gov";
-	            break;
-	        case "2.16.840.1.113883.6.12":
-	            system = "http://www.ama-assn.org/go/cpt";
-	            break;
-	        case "2.16.840.1.113883.6.209":
-	            system = "http://hl7.org/fhir/ndfrt";
-	            break;
-	        case "2.16.840.1.113883.4.9":
-	            system = "http://fdasis.nlm.nih.gov";
-	            break;
-	        case "2.16.840.1.113883.12.292":
-	            system = "http://www2a.cdc.gov/vaccines/iis/iisstandards/vaccines.asp?rpt=cvx";
-	            break;
-	        case "1.0.3166.1.2.2":
-	            system = "urn:iso:std:iso:3166";
-	            break;
-	        case "2.16.840.1.113883.6.301.5":
-	            system = "http://www.nubc.org/patient-discharge";
-	            break;
-	        case "2.16.840.1.113883.6.256":
-	            system = "http://www.radlex.org";
-	            break;
-	        case "2.16.840.1.113883.6.3":
-	            system = "http://hl7.org/fhir/sid/icd-10";
-	            break;
-	        case "2.16.840.1.113883.6.4":
-	            system = "http://www.icd10data.com/icd10pcs";
-	            break;
-	        case "2.16.840.1.113883.6.42":
-	            system = "http://hl7.org/fhir/sid/icd-9";
-	            break;
-	        case "2.16.840.1.113883.6.73":
-	            system = "http://www.whocc.no/atc";
-	            break;
-	        case "2.16.840.1.113883.6.24":
-	            system = "urn:std:iso:11073:10101";
-	            break;
-	        case "1.2.840.10008.2.16.4":
-	            system = "http://nema.org/dicom/dicm";
-	            break;
-	        case "2.16.840.1.113883.6.281":
-	            system = "http://www.genenames.org";
-	            break;
-	        case "2.16.840.1.113883.6.280":
-	            system = "http://www.ncbi.nlm.nih.gov/nuccore";
-	            break;
-	        case "2.16.840.1.113883.6.282":
-	            system = "http://www.hgvs.org/mutnomen";
-	            break;
-	        case "2.16.840.1.113883.6.284":
-	            system = "http://www.ncbi.nlm.nih.gov/projects/SNP";
-	            break;
-	        case "2.16.840.1.113883.3.912":
-	            system = "http://cancer.sanger.ac.uk/cancergenome/projects/cosmic";
-	            break;
-	        case "2.16.840.1.113883.6.283":
-	            system = "http://www.hgvs.org/mutnomen";
-	            break;
-	        case "2.16.840.1.113883.6.174":
-	            system = "http://www.omim.org";
-	            break;
-	        case "2.16.840.1.113883.13.191":
-	            system = "http://www.ncbi.nlm.nih.gov/pubmed";
-	            break;
-	        case "2.16.840.1.113883.3.913":
-	            system = "http://www.pharmgkb.org";
-	            break;
-	        case "2.16.840.1.113883.3.1077":
-	            system = "http://clinicaltrials.gov";
-	            break;
-	        default:
-	            system = "urn:oid:" + codeSystem;
-	            break;
-	    }
+		case "2.16.840.1.113883.4.642.3.153":
+			system = "http://hl7.org/fhir/condition-category";
+			break;
+		case "2.16.840.1.113883.6.96":
+			system = "http://snomed.info/sct";
+			break;
+		case "2.16.840.1.113883.6.88":
+			system = UMLS_ROOT + "rxnorm";
+			break;
+		case "2.16.840.1.113883.6.1":
+			system = "http://loinc.org";
+			break;
+		case "2.16.840.1.113883.6.8":
+			system = "http://unitsofmeasure.org";
+			break;
+		case "2.16.840.1.113883.3.26.1.2":
+			system = "http://ncimeta.nci.nih.gov";
+			break;
+		case "2.16.840.1.113883.6.12":
+			system = "http://www.ama-assn.org/go/cpt";
+			break;
+		case "2.16.840.1.113883.6.209":
+			system = "http://hl7.org/fhir/ndfrt";
+			break;
+		case "2.16.840.1.113883.4.9":
+			system = "http://fdasis.nlm.nih.gov";
+			break;
+		case "2.16.840.1.113883.12.292":
+			system = "http://www2a.cdc.gov/vaccines/iis/iisstandards/vaccines.asp?rpt=cvx";
+			break;
+		case "1.0.3166.1.2.2":
+			system = "urn:iso:std:iso:3166";
+			break;
+		case "2.16.840.1.113883.6.301.5":
+			system = "http://www.nubc.org/patient-discharge";
+			break;
+		case "2.16.840.1.113883.6.256":
+			system = "http://www.radlex.org";
+			break;
+		case "2.16.840.1.113883.6.3":
+			system = "http://hl7.org/fhir/sid/icd-10";
+			break;
+		case "2.16.840.1.113883.6.4":
+			system = "http://www.icd10data.com/icd10pcs";
+			break;
+		case "2.16.840.1.113883.6.42":
+			system = "http://hl7.org/fhir/sid/icd-9";
+			break;
+		case "2.16.840.1.113883.6.73":
+			system = "http://www.whocc.no/atc";
+			break;
+		case "2.16.840.1.113883.6.24":
+			system = "urn:std:iso:11073:10101";
+			break;
+		case "1.2.840.10008.2.16.4":
+			system = "http://nema.org/dicom/dicm";
+			break;
+		case "2.16.840.1.113883.6.281":
+			system = "http://www.genenames.org";
+			break;
+		case "2.16.840.1.113883.6.280":
+			system = "http://www.ncbi.nlm.nih.gov/nuccore";
+			break;
+		case "2.16.840.1.113883.6.282":
+			system = "http://www.hgvs.org/mutnomen";
+			break;
+		case "2.16.840.1.113883.6.284":
+			system = "http://www.ncbi.nlm.nih.gov/projects/SNP";
+			break;
+		case "2.16.840.1.113883.3.912":
+			system = "http://cancer.sanger.ac.uk/cancergenome/projects/cosmic";
+			break;
+		case "2.16.840.1.113883.6.283":
+			system = "http://www.hgvs.org/mutnomen";
+			break;
+		case "2.16.840.1.113883.6.174":
+			system = "http://www.omim.org";
+			break;
+		case "2.16.840.1.113883.13.191":
+			system = "http://www.ncbi.nlm.nih.gov/pubmed";
+			break;
+		case "2.16.840.1.113883.3.913":
+			system = "http://www.pharmgkb.org";
+			break;
+		case "2.16.840.1.113883.3.1077":
+			system = "http://clinicaltrials.gov";
+			break;
+		case "2.16.840.1.113883.6.314":
+			system = UMLS_ROOT + "mmsl";
+			break;
+		case "2.16.840.1.113883.3.26.1.1":
+			system = UMLS_ROOT + "nci";
+			break;
+		case "2.16.840.1.113883.1.11.12839":
+			system = "http://unitsofmeasure.org/ucum.html";
+			break;
+		default:
+			system = "urn:oid:" + codeSystem;
+			LOGGER.info("Encountered unmapped OID: " + codeSystem);
+			break;
+		}
 		return system;
 	}
 
-	public CodingDt tParticipationType2ParticipationTypeCode(org.openhealthtools.mdht.uml.hl7.vocab.ParticipationType cdaParticipationType) {
-		CodingDt fhirParticipationType = new CodingDt();
-		fhirParticipationType.setSystem("http://hl7.org/fhir/v3/ParticipationType");
+	@Override
+	public Coding tParticipationType2ParticipationTypeCode(
+			org.openhealthtools.mdht.uml.hl7.vocab.ParticipationType cdaParticipationType) {
+		Coding fhirParticipationType = new Coding();
+		fhirParticipationType.setSystem("http://terminology.hl7.org/CodeSystem/v3-ParticipationType");
 		String code = null;
 		String display = null;
 
-		switch(cdaParticipationType) {
-			case PRF: code = "PRF"; display = "performer";
-					break;
-			case SBJ: code = "SBJ"; display ="subject";
-					break;
-			case ADM: code = "ADM"; display = "admitter";
-					break;
-			case ATND: code = "ATND"; display = "attender";
-					break;
-			case AUT: code = "AUT"; display = "author";
-					break;
-			case AUTHEN: code = "AUTHEN"; display = "authenticator";
-				break;
-			case BBY: code = "BBY"; display = "baby";
-				break;
-			case BEN: code = "BEN"; display = "beneficiary";
-				break;
-			case CALLBCK: code = "CALLBCK"; display = "callback contact";
-				break;
-			case CON: code = "CON"; display = "consultant";
-				break;
-			case COV: code = "COV"; display = "coverage target";
-				break;
-			case CSM: code = "CSM"; display = "consumable";
-				break;
-			case CST: code = "CST"; display = "custodian";
-				break;
-			case DEV: code = "DEV"; display = "device";
-				break;
-			case DIR: code = "DIR"; display = "direct target";
-				break;
-			case DIS: code = "DIS"; display = "discharger";
-				break;
-			case DIST: code = "DIST"; display = "distributor";
-				break;
-			case DON: code = "DON"; display = "donor";
-				break;
-			case DST: code = "DST"; display = "destination";
-				break;
-			case ELOC: code = "ELOC"; display = "entry location";
-				break;
-			case ENT: code = "ENT"; display = " data entry person";
-				break;
-			case ESC: code = "ESC"; display = "escort";
-				break;
-			case HLD: code = "HLD"; display = "holder";
-				break;
-			case IND: code = "IND"; display = "indirect target";
-				break;
-			case INF: code = "INF"; display = "informant";
-				break;
-			case IRCP: code = "IRCP"; display = "information recipient";
-				break;
-			case LA: code = "LA"; display = "legal authenticator";
-				break;
-			case LOC: code = "LOC"; display = "location";
-				break;
-			case NOT: code = "NOT"; display = "ugent notification contact";
-				break;
-			case NRD: code = "NRD"; display = "non-reuseable device";
-				break;
-			case ORG: code = "ORG"; display = "origin";
-				break;
-			case PPRF: code = "PPRF"; display = "primary performer";
-				break;
-			case PRCP: code = "PRCP"; display = "primary information recipient";
-				break;
-			case PRD: code = "PRD"; display = "product";
-				break;
-			case RCT: code = "RCT"; display = "record target";
-				break;
-			case RCV: code = "RCV"; display = "receiver";
-				break;
-			case RDV: code = "RDV"; display = "reusable device";
-				break;
-			case REF: code = "REF"; display = "referrer";
-				break;
-			case REFB: code = "REFB"; display = "Referred By";
-				break;
-			case REFT: code = "REFT"; display = "Referred to";
-				break;
-			case RESP: code = "RESP"; display = "responsible party";
-				break;
-			case RML: code = "RML"; display = "remote";
-				break;
-			case SPC: code = "SPC"; display = "specimen";
-				break;
-			case SPRF: code = "SPRF"; display = "secondary performer";
-				break;
-			case TRC: code = "TRC"; display = "tracker";
-				break;
-			case VIA: code = "VIA"; display = "via";
-				break;
-			case VRF: code = "VRF"; display = "verifier";
-				break;
-			case WIT: code = "WIT"; display = "witness";
-				break;
-			default:
-				break;
+		switch (cdaParticipationType) {
+		case PRF:
+			code = "PRF";
+			display = "performer";
+			break;
+		case SBJ:
+			code = "SBJ";
+			display = "subject";
+			break;
+		case ADM:
+			code = "ADM";
+			display = "admitter";
+			break;
+		case ATND:
+			code = "ATND";
+			display = "attender";
+			break;
+		case AUT:
+			code = "AUT";
+			display = "author";
+			break;
+		case AUTHEN:
+			code = "AUTHEN";
+			display = "authenticator";
+			break;
+		case BBY:
+			code = "BBY";
+			display = "baby";
+			break;
+		case BEN:
+			code = "BEN";
+			display = "beneficiary";
+			break;
+		case CALLBCK:
+			code = "CALLBCK";
+			display = "callback contact";
+			break;
+		case CON:
+			code = "CON";
+			display = "consultant";
+			break;
+		case COV:
+			code = "COV";
+			display = "coverage target";
+			break;
+		case CSM:
+			code = "CSM";
+			display = "consumable";
+			break;
+		case CST:
+			code = "CST";
+			display = "custodian";
+			break;
+		case DEV:
+			code = "DEV";
+			display = "device";
+			break;
+		case DIR:
+			code = "DIR";
+			display = "direct target";
+			break;
+		case DIS:
+			code = "DIS";
+			display = "discharger";
+			break;
+		case DIST:
+			code = "DIST";
+			display = "distributor";
+			break;
+		case DON:
+			code = "DON";
+			display = "donor";
+			break;
+		case DST:
+			code = "DST";
+			display = "destination";
+			break;
+		case ELOC:
+			code = "ELOC";
+			display = "entry location";
+			break;
+		case ENT:
+			code = "ENT";
+			display = " data entry person";
+			break;
+		case ESC:
+			code = "ESC";
+			display = "escort";
+			break;
+		case HLD:
+			code = "HLD";
+			display = "holder";
+			break;
+		case IND:
+			code = "IND";
+			display = "indirect target";
+			break;
+		case INF:
+			code = "INF";
+			display = "informant";
+			break;
+		case IRCP:
+			code = "IRCP";
+			display = "information recipient";
+			break;
+		case LA:
+			code = "LA";
+			display = "legal authenticator";
+			break;
+		case LOC:
+			code = "LOC";
+			display = "location";
+			break;
+		case NOT:
+			code = "NOT";
+			display = "ugent notification contact";
+			break;
+		case NRD:
+			code = "NRD";
+			display = "non-reuseable device";
+			break;
+		case ORG:
+			code = "ORG";
+			display = "origin";
+			break;
+		case PPRF:
+			code = "PPRF";
+			display = "primary performer";
+			break;
+		case PRCP:
+			code = "PRCP";
+			display = "primary information recipient";
+			break;
+		case PRD:
+			code = "PRD";
+			display = "product";
+			break;
+		case RCT:
+			code = "RCT";
+			display = "record target";
+			break;
+		case RCV:
+			code = "RCV";
+			display = "receiver";
+			break;
+		case RDV:
+			code = "RDV";
+			display = "reusable device";
+			break;
+		case REF:
+			code = "REF";
+			display = "referrer";
+			break;
+		case REFB:
+			code = "REFB";
+			display = "Referred By";
+			break;
+		case REFT:
+			code = "REFT";
+			display = "Referred to";
+			break;
+		case RESP:
+			code = "RESP";
+			display = "responsible party";
+			break;
+		case RML:
+			code = "RML";
+			display = "remote";
+			break;
+		case SPC:
+			code = "SPC";
+			display = "specimen";
+			break;
+		case SPRF:
+			code = "SPRF";
+			display = "secondary performer";
+			break;
+		case TRC:
+			code = "TRC";
+			display = "tracker";
+			break;
+		case VIA:
+			code = "VIA";
+			display = "via";
+			break;
+		case VRF:
+			code = "VRF";
+			display = "verifier";
+			break;
+		case WIT:
+			code = "WIT";
+			display = "witness";
+			break;
+		default:
+			break;
 		}
-		if(code != null && display != null) {
+		if (code != null && display != null) {
 			fhirParticipationType.setCode(code);
 			fhirParticipationType.setDisplay(display);
 		}
 		return fhirParticipationType;
 	}
 
-	public UnitsOfTimeEnum tPeriodUnit2UnitsOfTimeEnum(String cdaPeriodUnit) {
-		switch(cdaPeriodUnit.toLowerCase()) {
-			case "a":
-				return UnitsOfTimeEnum.A;
-			case "d":
-				return UnitsOfTimeEnum.D;
-			case "h":
-				return UnitsOfTimeEnum.H;
-			case "min":
-				return UnitsOfTimeEnum.MIN;
-			case "mo":
-				return UnitsOfTimeEnum.MO;
-			case "s":
-				return UnitsOfTimeEnum.S;
-			case "wk":
-				return UnitsOfTimeEnum.WK;
-			default:
-				return null;
-		}
-	}
-	
-	public AddressTypeEnum tPostalAddressUse2AddressTypeEnum(PostalAddressUse cdaPostalAddressUse) {
-		switch(cdaPostalAddressUse) {
-			case PHYS:
-				return AddressTypeEnum.PHYSICAL;
-			case PST:
-				return AddressTypeEnum.POSTAL;
-			default:
-				return null;
+	@Override
+	public UnitsOfTime tPeriodUnit2UnitsOfTime(String cdaPeriodUnit) {
+		switch (cdaPeriodUnit.toLowerCase()) {
+		case "a":
+			return UnitsOfTime.A;
+		case "d":
+			return UnitsOfTime.D;
+		case "h":
+			return UnitsOfTime.H;
+		case "min":
+			return UnitsOfTime.MIN;
+		case "mo":
+			return UnitsOfTime.MO;
+		case "s":
+			return UnitsOfTime.S;
+		case "wk":
+			return UnitsOfTime.WK;
+		default:
+			return null;
 		}
 	}
 
-	public AddressUseEnum tPostalAdressUse2AddressUseEnum(PostalAddressUse cdaPostalAddressUse) {
-		switch(cdaPostalAddressUse) {
-			case HP:
-			case H:
-				return AddressUseEnum.HOME;
-			case WP:
-				return AddressUseEnum.WORK;
-			case TMP:
-				return AddressUseEnum.TEMPORARY;
-			case BAD:
-				return AddressUseEnum.OLD___INCORRECT;
-			default:
-				return AddressUseEnum.TEMPORARY;
+	@Override
+	public AddressType tPostalAddressUse2AddressType(PostalAddressUse cdaPostalAddressUse) {
+		switch (cdaPostalAddressUse) {
+		case PHYS:
+			return AddressType.PHYSICAL;
+		case PST:
+			return AddressType.POSTAL;
+		default:
+			return null;
 		}
 	}
 
-	public ConditionCategoryCodesEnum tProblemType2ConditionCategoryCodesEnum(String cdaProblemType) {
-		if(cdaProblemType == null)
-			return null;
-		switch(cdaProblemType) {
-			case "248536006":
-			case "373930000":
-			case "404684003": 
-			case "75321-0":
-			case "75312-9":
-				return ConditionCategoryCodesEnum.FINDING;
-			case "409586006": 
-			case "75322-8":
-			case "75313-7":
-				return ConditionCategoryCodesEnum.COMPLAINT;
-			case "282291009": 
-			case "29308-4":
-			case "75314-5":
-			case "55607006": // problem
-			case "75318-6": 
-			case "75323-6": // condition
-			case "75315-2":
-			case "64572001": 
-				return ConditionCategoryCodesEnum.DIAGNOSIS;
-			case "418799008": 
-			case "75325-1":
-			case "75317-8":
-				return ConditionCategoryCodesEnum.SYMPTOM;
-				
-			default: 
-				return null;
+	@Override
+	public AddressUse tPostalAdressUse2AddressUse(PostalAddressUse cdaPostalAddressUse) {
+		switch (cdaPostalAddressUse) {
+		case HP:
+		case H:
+			return AddressUse.HOME;
+		case WP:
+			return AddressUse.WORK;
+		case TMP:
+			return AddressUse.TEMP;
+		case BAD:
+			return AddressUse.OLD;
+		default:
+			return AddressUse.TEMP;
 		}
 	}
-	
-	public DiagnosticReportStatusEnum tResultOrganizerStatusCode2DiagnosticReportStatusEnum(String cdaResultOrganizerStatusCode) {
-		if(cdaResultOrganizerStatusCode == null)
+
+	@Override
+	public Coding tProblemType2ConditionCategoryCodes(String cdaProblemType) {
+		// TODO: find a defined enum/valueset/codesystem for this.
+		// R4 doesn't seem to have this so use DSTU2 definitions instead.
+		// https://www.hl7.org/fhir/DSTU2/valueset-condition-category.html
+		Coding c = new Coding().setSystem("http://terminology.hl7.org/CodeSystem/condition-category");
+		if (cdaProblemType == null)
 			return null;
-		
-		switch(cdaResultOrganizerStatusCode.toLowerCase()) {
-			case "aborted":
-				return DiagnosticReportStatusEnum.CANCELLED;
-			case "active":
-				return DiagnosticReportStatusEnum.PARTIAL;
-			case "cancelled":
-				return DiagnosticReportStatusEnum.CANCELLED;
-			case "completed":
-				return DiagnosticReportStatusEnum.FINAL;
-			case "held":
-				return DiagnosticReportStatusEnum.REGISTERED;
-			case "suspended":
-				return DiagnosticReportStatusEnum.ENTERED_IN_ERROR;
-			default:
-				return null;
+		switch (cdaProblemType) {
+		case "248536006":
+		case "373930000":
+		case "404684003":
+		case "75321-0":
+		case "75312-9":
+			// return ConditionCategoryCodesEnum.FINDING;
+			return c.setCode("finding").setDisplay("Finding");
+		case "409586006":
+		case "75322-8":
+		case "75313-7":
+			// return ConditionCategoryCodesEnum.COMPLAINT;
+			return c.setCode("complaint").setDisplay("Complaint");
+		case "282291009":
+		case "29308-4":
+		case "75314-5":
+		case "55607006": // problem
+		case "75318-6":
+		case "75323-6": // condition
+		case "75315-2":
+		case "64572001":
+			// return ConditionCategoryCodesEnum.DIAGNOSIS;
+			return c.setCode("diagnosis").setDisplay("Diagnosis");
+		case "418799008":
+		case "75325-1":
+		case "75317-8":
+			// return ConditionCategoryCodesEnum.SYMPTOM;
+			return c.setCode("symptom").setDisplay("Symptom");
+
+		default:
+			return null;
 		}
 	}
-	
-	public CodingDt tRoleCode2PatientContactRelationshipCode(String cdaRoleCode) {
-		if(cdaRoleCode == null)
+
+	@Override
+	public DiagnosticReportStatus tResultOrganizerStatusCode2DiagnosticReportStatus(
+			String cdaResultOrganizerStatusCode) {
+		if (cdaResultOrganizerStatusCode == null)
 			return null;
-		
-		CodingDt fhirPatientContactRelationshipCode = new CodingDt();
-		fhirPatientContactRelationshipCode.setSystem("http://hl7.org/fhir/patient-contact-relationship");
+
+		switch (cdaResultOrganizerStatusCode.toLowerCase()) {
+		case "aborted":
+			return DiagnosticReportStatus.CANCELLED;
+		case "active":
+			return DiagnosticReportStatus.PARTIAL;
+		case "cancelled":
+			return DiagnosticReportStatus.CANCELLED;
+		case "completed":
+			return DiagnosticReportStatus.FINAL;
+		case "held":
+			return DiagnosticReportStatus.REGISTERED;
+		case "suspended":
+			return DiagnosticReportStatus.ENTEREDINERROR;
+		default:
+			return null;
+		}
+	}
+
+	@Override
+	public Coding tRoleCode2PatientContactRelationshipCode(String cdaRoleCode) {
+		if (cdaRoleCode == null)
+			return null;
+
+		Coding fhirPatientContactRelationshipCode = new Coding();
+		fhirPatientContactRelationshipCode.setSystem("http://terminology.hl7.org/CodeSystem/v2-0131");
 		String code = null;
 		String display = null;
-		
-		switch(cdaRoleCode.toLowerCase()) {
-			case "econ": // emergency contact
-				code="emergency"; display = "Emergency"; break;
-			case "ext": // extended family member
-			case "fammemb": // family member
-				code = "family"; display = "Family"; break;
-			case "guard": // guardian
-				code = "guardian"; display = "Guardian"; break;
-			case "frnd": // friend
-				code = "friend"; display = "Friend"; break;
-			case "sps": // spouse
-			case "dompart": // domestic partner
-			case "husb": // husband
-			case "wife": // wife
-				code = "partner"; display = "Partner"; break;
-			case "work": 
-				code = "work"; display = "Work"; break;
-			case "gt": 
-				code = "guarantor"; display = "Guarantor"; break;
-			case "prn": // parent
-			case "fth": // father
-			case "mth": // mother
-			case "nprn": // natural parent
-			case "nfth": // natural father
-			case "nmth": // natural mother
-			case "prinlaw": // parent in-law
-			case "fthinlaw": // father in-law
-			case "mthinlaw": // mother in-law
-			case "stpprn": // step parent
-			case "stpfth": // stepfather
-			case "stpmth": // stepmother
-				code = "parent"; display = "Parent"; break;
-			case "powatt":
-				code = "agent"; display = "Agent"; break;
-			default:
-				return null;
+
+		switch (cdaRoleCode.toLowerCase()) {
+		case "econ": // emergency contact
+		case "ext": // extended family member
+		case "guard": // guardian
+		case "frnd": // friend
+		case "sps": // spouse
+		case "dompart": // domestic partner
+		case "husb": // husband
+		case "wife": // wife
+		case "prn": // parent
+		case "fth": // father
+		case "mth": // mother
+		case "nprn": // natural parent
+		case "nfth": // natural father
+		case "nmth": // natural mother
+		case "prinlaw": // parent in-law
+		case "fthinlaw": // father in-law
+		case "mthinlaw": // mother in-law
+		case "stpprn": // step parent
+		case "stpfth": // stepfather
+		case "stpmth": // stepmother
+			code = "C";
+			display = "Emergency Contact";
+			break; // emergency contact
+		case "work":
+			code = "E";
+			display = "Employer";
+			break; // employer
+		case "fammemb":
+			code = "N";
+			display = "Next-of-Kin";
+			break; // family
+		default:
+			code = "O";
+			display = "Other";
+			break; // other
 		}
+
 		fhirPatientContactRelationshipCode.setCode(code);
 		fhirPatientContactRelationshipCode.setDisplay(display);
 		return fhirPatientContactRelationshipCode;
 	}
-	
-	public AllergyIntoleranceSeverityEnum tSeverityCode2AllergyIntoleranceSeverityEnum(String cdaSeverityCode) {
-		if(cdaSeverityCode == null)
+
+	@Override
+	public AllergyIntoleranceSeverity tSeverityCode2AllergyIntoleranceSeverity(String cdaSeverityCode) {
+		if (cdaSeverityCode == null)
 			return null;
-		switch(cdaSeverityCode) {
-			case "255604002": 
-				return AllergyIntoleranceSeverityEnum.MILD;
-			case "371923003": 
-				return AllergyIntoleranceSeverityEnum.MILD;
-			case "6736007": 
-				return AllergyIntoleranceSeverityEnum.MODERATE;
-			case "371924009": 
-				return AllergyIntoleranceSeverityEnum.MODERATE;
-			case "24484000": 
-				return AllergyIntoleranceSeverityEnum.SEVERE;
-			case "399166001": 
-				return AllergyIntoleranceSeverityEnum.SEVERE;
-			default: 
-				return null;
-		}
-	}
-	
-	public AllergyIntoleranceStatusEnum tStatusCode2AllergyIntoleranceStatusEnum(String cdaStatusCode) {
-		switch(cdaStatusCode.toLowerCase()) {
-			case "active":
-				return AllergyIntoleranceStatusEnum.ACTIVE;
-			case "nullified":
-			case "error":
-				return AllergyIntoleranceStatusEnum.ENTERED_IN_ERROR;
-			case "confirmed":
-				return AllergyIntoleranceStatusEnum.CONFIRMED;
-			case "unconfirmed":
-				return AllergyIntoleranceStatusEnum.UNCONFIRMED;
-			case "refuted":
-				return AllergyIntoleranceStatusEnum.REFUTED;
-			case "inactive":
-				return AllergyIntoleranceStatusEnum.INACTIVE;
-			case "resolved":
-				return AllergyIntoleranceStatusEnum.RESOLVED;
-			default:
-				return null;
+		switch (cdaSeverityCode) {
+		case "255604002":
+			return AllergyIntoleranceSeverity.MILD;
+		case "371923003":
+			return AllergyIntoleranceSeverity.MILD;
+		case "6736007":
+			return AllergyIntoleranceSeverity.MODERATE;
+		case "371924009":
+			return AllergyIntoleranceSeverity.MODERATE;
+		case "24484000":
+			return AllergyIntoleranceSeverity.SEVERE;
+		case "399166001":
+			return AllergyIntoleranceSeverity.SEVERE;
+		default:
+			return null;
 		}
 	}
 
-	public ConditionClinicalStatusCodesEnum tStatusCode2ConditionClinicalStatusCodesEnum(String cdaStatusCode) {
+	@Override
+	public CodeableConcept tStatusCode2AllergyIntoleranceVerificationStatus(String cdaStatusCode) {
 		switch (cdaStatusCode.toLowerCase()) {
-			// semantically not the same, but at least outcome-wise it is similar
-			case "aborted":
-				return ConditionClinicalStatusCodesEnum.RESOLVED;
-			case "active":
-				return ConditionClinicalStatusCodesEnum.ACTIVE;
-			case "completed":
-				return ConditionClinicalStatusCodesEnum.RESOLVED;
-			case "suspended":
-				return ConditionClinicalStatusCodesEnum.REMISSION;
-			default:
-				return null;
-		}
-	}
-
-	public EncounterStateEnum tStatusCode2EncounterStatusEnum(String cdaStatusCode) {
-		switch(cdaStatusCode.toLowerCase()) {
-			case "in-progress":
-			case "active":
-				return EncounterStateEnum.IN_PROGRESS;
-			case "onleave":
-				return EncounterStateEnum.ON_LEAVE;
-			case "finished":
-			case "completed":
-				return EncounterStateEnum.FINISHED;
-			case "cancelled":
-				return EncounterStateEnum.CANCELLED;
-			case "planned":
-				return EncounterStateEnum.PLANNED;
-			case "arrived":
-				return EncounterStateEnum.ARRIVED;
-			default:
-				return null;
-		}
-	}
-
-	public MedicationDispenseStatusEnum tStatusCode2MedicationDispenseStatusEnum(String cdaStatusCode) {
-		switch(cdaStatusCode.toLowerCase()) {
-			case "active":
-			case "in-progress":
-			case "inprogress":
-				return MedicationDispenseStatusEnum.IN_PROGRESS;
-			case "on-hold":
-			case "onhold":
-			case "suspended":
-				return MedicationDispenseStatusEnum.ON_HOLD;
-			case "completed":
-				return MedicationDispenseStatusEnum.COMPLETED;
-			case "nullified":
-			case "error":
-			case "entered-in-error":
-				return MedicationDispenseStatusEnum.ENTERED_IN_ERROR;
-			case "stopped":
-				return MedicationDispenseStatusEnum.STOPPED;
-			default:
-				return null;
-		}
-	}
-
-	public MedicationStatementStatusEnum tStatusCode2MedicationStatementStatusEnum(String cdaStatusCode) {
-		switch(cdaStatusCode.toLowerCase()) {
-			case "active":
-				return MedicationStatementStatusEnum.ACTIVE;
-			case "intended":
-				return MedicationStatementStatusEnum.INTENDED;
-			case "completed":
-				return MedicationStatementStatusEnum.COMPLETED;
-			case "nullified":
-				return MedicationStatementStatusEnum.ENTERED_IN_ERROR;
-			default:
-				return null;
-		}
-	}
-
-	public ProcedureStatusEnum tStatusCode2ProcedureStatusEnum(String cdaStatusCode) {
-		switch(cdaStatusCode.toLowerCase()) {
-			case "active":
-				return ProcedureStatusEnum.IN_PROGRESS;
-			case "completed":
-				return ProcedureStatusEnum.COMPLETED;
-			case "aborted":
-			case "aboted":
-				return ProcedureStatusEnum.ABOTED;
-			case "error":
-				return ProcedureStatusEnum.ENTERED_IN_ERROR;
-			default:
-				return null;
-		}
-	}
-
-	public ContactPointUseEnum tTelecommunicationAddressUse2ContactPointUseEnum(TelecommunicationAddressUse cdaTelecommunicationAddressUse) {
-		switch(cdaTelecommunicationAddressUse) {
-			case H:
-			case HP:
-				return ContactPointUseEnum.HOME;
-			case WP:
-				return ContactPointUseEnum.WORK;
-			case TMP:
-				return ContactPointUseEnum.TEMP;
-			case BAD:
-				return ContactPointUseEnum.OLD;
-			case MC:
-				return ContactPointUseEnum.MOBILE;
-			default:
-				return ContactPointUseEnum.TEMP;
-		}
-
-	}
-
-	public ContactPointSystemEnum tTelValue2ContactPointSystemEnum(String cdaTelValue) {
-		if(cdaTelValue == null)
+		case "completed":
+			return new CodeableConcept(new Coding("http://terminology.hl7.org/CodeSystem/allergyintolerance-verification", "confirmed", "Confirmed"));
+		case "active":
+			return new CodeableConcept(new Coding("http://terminology.hl7.org/CodeSystem/allergyintolerance-verification", "confirmed", "Confirmed"));
+		case "suspended":
+			return new CodeableConcept(new Coding("http://terminology.hl7.org/CodeSystem/allergyintolerance-verification", "unconfirmed", "Unconfirmed"));
+		case "aborted":
+			return new CodeableConcept(new Coding("http://terminology.hl7.org/CodeSystem/allergyintolerance-verification", "unconfirmed", "Unconfirmed"));
+		default:
 			return null;
-		
-		switch(cdaTelValue.toLowerCase()) {
-			case "phone":
-			case "tel":
-				return ContactPointSystemEnum.PHONE;
-			case "email":
-			case "mailto":
-				return ContactPointSystemEnum.EMAIL;
-			case "fax":
-				return ContactPointSystemEnum.FAX;
-			case "http":
-			case "https":
-				return ContactPointSystemEnum.URL;
-			default:
-				return null;
+		}
+	}
+
+	@Override
+	public CodeableConcept tStatusCode2ConditionVerificationStatus(String cdaStatusCode) {
+		if (cdaStatusCode == null) {
+			return new CodeableConcept(new Coding("http://terminology.hl7.org/CodeSystem/condition-ver-status", "unconfirmed", "Unconfirmed"));
+			//return ConditionVerificationStatus.UNKNOWN;
+		}
+		switch (cdaStatusCode.toLowerCase()) {
+		case "completed":
+			return new CodeableConcept(new Coding("http://terminology.hl7.org/CodeSystem/condition-ver-status", "refuted", "Refuted"));
+		case "active":
+			return new CodeableConcept(new Coding("http://terminology.hl7.org/CodeSystem/condition-ver-status", "confirmed", "Confirmed"));
+		case "suspended":
+			return new CodeableConcept(new Coding("http://terminology.hl7.org/CodeSystem/condition-ver-status", "provisional", "Provisional"));
+		case "aborted":
+			return new CodeableConcept(new Coding("http://terminology.hl7.org/CodeSystem/condition-ver-status", "entered-in-error", "Entered in Error"));
+		default:
+			return new CodeableConcept(new Coding("http://terminology.hl7.org/CodeSystem/condition-ver-status", "unconfirmed", "Unconfirmed"));
+			//return ConditionVerificationStatus.UNKNOWN;
+		}
+	}
+
+	@Override
+	public EncounterStatus tStatusCode2EncounterStatusEnum(String cdaStatusCode) {
+		switch (cdaStatusCode.toLowerCase()) {
+		case "in-progress":
+		case "active":
+			return EncounterStatus.INPROGRESS;
+		case "onleave":
+			return EncounterStatus.ONLEAVE;
+		case "finished":
+		case "completed":
+			return EncounterStatus.FINISHED;
+		case "cancelled":
+			return EncounterStatus.CANCELLED;
+		case "planned":
+			return EncounterStatus.PLANNED;
+		case "arrived":
+			return EncounterStatus.ARRIVED;
+		default:
+			return null;
+		}
+	}
+
+	@Override
+	public MedicationdispenseStatus tStatusCode2MedicationDispenseStatus(String cdaStatusCode) {
+		switch (cdaStatusCode.toLowerCase()) {
+		case "completed":
+			return MedicationdispenseStatus.COMPLETED;
+		case "aborted":
+			return MedicationdispenseStatus.STOPPED;
+		default:
+			return null;
+		}
+	}
+
+	@Override
+	public MedicationStatementStatus tStatusCode2MedicationStatementStatus(String cdaStatusCode) {
+		switch (cdaStatusCode.toLowerCase()) {
+		case "active":
+			return MedicationStatementStatus.ACTIVE;
+		case "intended":
+			return MedicationStatementStatus.INTENDED;
+		case "completed":
+			return MedicationStatementStatus.COMPLETED;
+		case "nullified":
+			return MedicationStatementStatus.ENTEREDINERROR;
+		default:
+			return null;
+		}
+	}
+
+	@Override
+	public ImmunizationStatus tStatusCode2ImmunizationStatus(String cdaStatusCode) {
+		if (cdaStatusCode == null) {
+			return null;
+		}
+
+		switch (cdaStatusCode.toLowerCase()) {
+		case "active":
+			return ImmunizationStatus.COMPLETED;
+		case "completed":
+			return ImmunizationStatus.COMPLETED;
+		case "nullified":
+			return ImmunizationStatus.ENTEREDINERROR;
+		case "normal":
+			return ImmunizationStatus.COMPLETED;
+		case "new":
+			return ImmunizationStatus.COMPLETED;
+		case "aborted":
+			return ImmunizationStatus.ENTEREDINERROR;
+		case "suspended":
+			return ImmunizationStatus.ENTEREDINERROR;
+		case "cancelled":
+			return ImmunizationStatus.ENTEREDINERROR;
+		case "held":
+			return ImmunizationStatus.ENTEREDINERROR;
+		case "obselete":
+			return ImmunizationStatus.ENTEREDINERROR;
+
+		default:
+			return null;
+		}
+	}
+
+	@Override
+	public ProcedureStatus tStatusCode2ProcedureStatus(String cdaStatusCode) {
+		switch (cdaStatusCode.toLowerCase()) {
+		case "active":
+			return ProcedureStatus.INPROGRESS;
+		case "completed":
+			return ProcedureStatus.COMPLETED;
+		case "aborted":
+			return ProcedureStatus.STOPPED;
+		case "cancelled":
+			return ProcedureStatus.ONHOLD;
+		default:
+			return ProcedureStatus.UNKNOWN;
+		}
+	}
+
+	@Override
+	public ContactPointUse tTelecommunicationAddressUse2ContactPointUse(
+			TelecommunicationAddressUse cdaTelecommunicationAddressUse) {
+		switch (cdaTelecommunicationAddressUse) {
+		case H:
+		case HP:
+			return ContactPointUse.HOME;
+		case WP:
+			return ContactPointUse.WORK;
+		case TMP:
+			return ContactPointUse.TEMP;
+		case BAD:
+			return ContactPointUse.OLD;
+		case MC:
+			return ContactPointUse.MOBILE;
+		default:
+			return ContactPointUse.TEMP;
+		}
+
+	}
+
+	@Override
+	public ContactPointSystem tTelValue2ContactPointSystem(String cdaTelValue) {
+		if (cdaTelValue == null)
+			return null;
+
+		switch (cdaTelValue.toLowerCase()) {
+		case "phone":
+		case "tel":
+			return ContactPointSystem.PHONE;
+		case "email":
+		case "mailto":
+			return ContactPointSystem.EMAIL;
+		case "fax":
+			return ContactPointSystem.FAX;
+		case "http":
+			return ContactPointSystem.URL;
+		case "https":
+			return ContactPointSystem.URL;
+		default:
+			return null;
+		}
+	}
+
+	@Override
+	public CodeableConcept tProblemStatus2AllergyIntoleranceClinicalStatus(String code) {
+		if (code == null) {
+			return null;
+		}
+		switch (code) {
+		case "55561003":
+			return new CodeableConcept(new Coding("http://terminology.hl7.org/CodeSystem/allergyintolerance-clinical", "active", "Active"));
+		case "73425007":
+			return new CodeableConcept(new Coding("http://terminology.hl7.org/CodeSystem/allergyintolerance-clinical", "inactive", "Inactive"));
+		case "413322009":
+			return new CodeableConcept(new Coding("http://terminology.hl7.org/CodeSystem/allergyintolerance-clinical", "resolved", "Resolved"));
+		default:
+			return null;
+		}
+	}
+
+	@Override
+	public CodeableConcept tProblemStatus2ConditionClinicalStatus(String code) {
+		if (code == null) {
+			return null;
+		}
+		switch (code) {
+		case "55561003":
+			return new CodeableConcept(new Coding("http://terminology.hl7.org/CodeSystem/condition-clinical", "active", "Active"));
+		case "73425007":
+			return new CodeableConcept(new Coding("http://terminology.hl7.org/CodeSystem/condition-clinical", "inactive", "Inactive"));
+		case "413322009":
+			return new CodeableConcept(new Coding("http://terminology.hl7.org/CodeSystem/condition-clinical", "resolved", "Resolved"));
+		default:
+			return null;
 		}
 	}
 }

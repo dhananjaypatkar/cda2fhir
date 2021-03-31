@@ -1,5 +1,19 @@
 package tr.com.srdc.cda2fhir.conf;
 
+
+import java.nio.charset.Charset;
+
+
+import org.hl7.fhir.r4.model.Coding;
+import org.hl7.fhir.r4.model.CodeableConcept;
+import org.hl7.fhir.r4.model.Composition.CompositionStatus;
+import org.hl7.fhir.r4.model.ContactPoint.ContactPointSystem;
+import org.hl7.fhir.r4.model.Encounter.EncounterStatus;
+import org.hl7.fhir.r4.model.Identifier.IdentifierUse;
+import org.hl7.fhir.r4.model.MedicationStatement.MedicationStatementStatus;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /*
  * #%L
  * CDA to FHIR Transformer Library
@@ -21,77 +35,93 @@ package tr.com.srdc.cda2fhir.conf;
  */
 
 import ca.uhn.fhir.context.FhirContext;
-import ca.uhn.fhir.model.dstu2.composite.CodingDt;
-import ca.uhn.fhir.model.dstu2.valueset.CompositionStatusEnum;
-import ca.uhn.fhir.model.dstu2.valueset.ConditionVerificationStatusEnum;
-import ca.uhn.fhir.model.dstu2.valueset.ContactPointSystemEnum;
-import ca.uhn.fhir.model.dstu2.valueset.EncounterStateEnum;
 import ca.uhn.fhir.narrative.CustomThymeleafNarrativeGenerator;
 import ca.uhn.fhir.narrative.INarrativeGenerator;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import java.nio.charset.Charset;
 
 public class Config {
 
-    private static FhirContext fhirCtx;
+	private static FhirContext fhirCtx;
 
-    // Default values for some mandatory attributes, which cannot be retrieved from CDA document
-    public static final String DEFAULT_COMMUNICATION_LANGUAGE_CODE_SYSTEM = "urn:ietf:bcp:47";
-    public static final ConditionVerificationStatusEnum DEFAULT_CONDITION_VERIFICATION_STATUS = ConditionVerificationStatusEnum.CONFIRMED;
-    public static final CompositionStatusEnum DEFAULT_COMPOSITION_STATUS = CompositionStatusEnum.PRELIMINARY;
-    public static final ContactPointSystemEnum DEFAULT_CONTACT_POINT_SYSTEM = ContactPointSystemEnum.PHONE;
-    public static final CodingDt DEFAULT_ENCOUNTER_PARTICIPANT_TYPE_CODE = new CodingDt().setSystem("http://hl7.org/fhir/v3/ParticipationType").setCode("PART").setDisplay("Participation");
-    public static final EncounterStateEnum DEFAULT_ENCOUNTER_STATUS = EncounterStateEnum.FINISHED;
-    public static final CodingDt DEFAULT_DIAGNOSTICREPORT_PERFORMER_DATA_ABSENT_REASON_CODE = new CodingDt().setSystem("http://hl7.org/fhir/data-absent-reason").setCode("unknown").setDisplay("Unknown");
-    public static final boolean DEFAULT_IMMUNIZATION_REPORTED = false;
+	// Default values for some mandatory attributes, which cannot be retrieved from
+	// CDA document
+	public static final String DEFAULT_COMMUNICATION_LANGUAGE_CODE_SYSTEM = "urn:ietf:bcp:47";
+	public static final CodeableConcept DEFAULT_CONDITION_VERIFICATION_STATUS = new CodeableConcept(new Coding("http://terminology.hl7.org/CodeSystem/condition-ver-status", "confirmed", "Confirmed"));
+	public static final CodeableConcept DEFAULT_ALLERGY_VERIFICATION_STATUS = new CodeableConcept(new Coding("http://terminology.hl7.org/CodeSystem/allergyintolerance-verification", "unconfirmed", "Unconfirmed"));
+	public static final CodeableConcept DEFAULT_ALLERGY_CLINICAL_STATUS = new CodeableConcept(new Coding("http://terminology.hl7.org/CodeSystem/allergyintolerance-clinical", "active", "Active"));
+	
+	public static final MedicationStatementStatus DEFAULT_MEDICATION_STATEMENT_STATUS = MedicationStatementStatus.ACTIVE;
+	public static final CompositionStatus DEFAULT_COMPOSITION_STATUS = CompositionStatus.PRELIMINARY;
+	public static final IdentifierUse DEFAULT_IDENTIFIER_USE = IdentifierUse.OFFICIAL;
+	public static final ContactPointSystem DEFAULT_CONTACT_POINT_SYSTEM = ContactPointSystem.PHONE;
+	public static final Coding DEFAULT_ENCOUNTER_PARTICIPANT_TYPE_CODE = new Coding()
+			.setSystem("http://hl7.org/fhir/v3/ParticipationType").setCode("PART").setDisplay("Participation");
+	public static final EncounterStatus DEFAULT_ENCOUNTER_STATUS = EncounterStatus.FINISHED;
+	public static final Coding DEFAULT_DIAGNOSTICREPORT_PERFORMER_DATA_ABSENT_REASON_CODE = new Coding()
+			.setSystem("http://hl7.org/fhir/data-absent-reason").setCode("unknown").setDisplay("Unknown");
+	public static final boolean DEFAULT_IMMUNIZATION_REPORTED = false;
 
-    public static final String VALIDATION_DEFINITION_PATH = "src/main/resources/validation-min.xml.zip";
-    public static final int DEFAULT_VALIDATOR_TERMINOLOGY_SERVER_CHECK_TIMEOUT = 10000; // in milliseconds, > 0
-    // if the array containing URLs doesn't give an accessible URL, this URL will be used
-    public static final String DEFAULT_VALIDATOR_TERMINOLOGY_SERVER_URL = "http://tx.fhir.org/r2";
-    public static final String[] VALIDATOR_TERMINOLOGY_SERVER_URLS = {
-            "http://tx.fhir.org/r2",
-            "http://test.fhir.org/r2",
-            "http://fhir.i2b2.org/srv-dstu2-0.2/api/open"
-    		};
-    
-    public static final String NARRATIVE_PROPERTIES_FILE_PATH = "file:src/main/resources/narrative/customnarrative.properties";
+	public static final String NARRATIVE_PROPERTIES_FILE_PATH = "file:src/main/resources/narrative/customnarrative.properties";
 
-    private static boolean generateNarrative = true;
-    private static INarrativeGenerator narrativeGenerator;
+	public static final String MEDICATION_CODE_SYSTEM = null;
 
-    private static boolean generateDafProfileMetadata = true;
+	private static boolean generateNarrative = false;
+	private static INarrativeGenerator narrativeGenerator;
 
-    private static final Logger logger = LoggerFactory.getLogger(Config.class);
+	private static boolean generateDafProfileMetadata = false;
+	
+	private static boolean addedZerosToDateTime = false;
+	
+	private static boolean isTransactionBundle = false;
 
-    static {
-        fhirCtx = FhirContext.forDstu2();
-        narrativeGenerator = new CustomThymeleafNarrativeGenerator(NARRATIVE_PROPERTIES_FILE_PATH);
-        if(generateNarrative)
-            fhirCtx.setNarrativeGenerator(narrativeGenerator);
+	private static final Logger logger = LoggerFactory.getLogger(Config.class);
 
-        logger.info("System file encoding is: " + Charset.defaultCharset().displayName());
-    }
+	static {
+		fhirCtx = FhirContext.forR4();
+		narrativeGenerator = new CustomThymeleafNarrativeGenerator(NARRATIVE_PROPERTIES_FILE_PATH);
+		if (generateNarrative)
+			fhirCtx.setNarrativeGenerator(narrativeGenerator);
 
-    public static FhirContext getFhirContext() {
-        return fhirCtx;
-    }
+		logger.info("System file encoding is: " + Charset.defaultCharset().displayName());
+	}
 
-    public static void setGenerateNarrative(boolean generateNar) {
-        generateNarrative = generateNar;
-        if(generateNarrative)
-            fhirCtx.setNarrativeGenerator(narrativeGenerator);
-        else
-            fhirCtx.setNarrativeGenerator(null);
-    }
+	public static FhirContext getFhirContext() {
+		return fhirCtx;
+	}
 
-    public static void setGenerateDafProfileMetadata(boolean generateDafProfileMeta) {
-        generateDafProfileMetadata = generateDafProfileMeta;
-    }
+	public static void setGenerateNarrative(boolean generateNar) {
+		generateNarrative = generateNar;
+		if (generateNarrative)
+			fhirCtx.setNarrativeGenerator(narrativeGenerator);
+		else
+			fhirCtx.setNarrativeGenerator(null);
+	}
 
-    public static boolean isGenerateDafProfileMetadata() {
-        return generateDafProfileMetadata;
-    }
+	public static boolean getGenerateNarrative() {
+		return generateNarrative;
+	}
+
+	public static void setGenerateDafProfileMetadata(boolean generateDafProfileMeta) {
+		generateDafProfileMetadata = generateDafProfileMeta;
+	}
+
+	public static boolean isGenerateDafProfileMetadata() {
+		return generateDafProfileMetadata;
+	}
+	
+	public static void setAddedZerosToDateTime(boolean addedZerosToDateTimeValue) {
+		addedZerosToDateTime = addedZerosToDateTimeValue;
+	}
+
+	public static boolean addedZerosToDateTime() {
+		return addedZerosToDateTime;
+	}
+	
+	public static boolean getIsTransactionBundle() {
+		return isTransactionBundle;
+	}
+	
+	public static void setIsTransactionBundle(boolean transactionBundle) {
+		isTransactionBundle = transactionBundle;
+	}
 
 }
